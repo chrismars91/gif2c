@@ -134,7 +134,7 @@ def img_to_h(image_path: str, img_name=None, width=None, height=None):
 #
 # print(arduino_array)
 
-img_to_h("IMAGES/ChristmasWrapping3.png", "bckgrnd", width=240)
+img_to_h("IMAGES/ChristmasWrapping3.png", img_name="bckgrnd", width=240)
 
 # frameI = get_gif_frame("/Users/chrisbolig/Documents/code/gif_python/GIFS/IMG_5766.GIF")
 # dimsI = get_dims_from_user(frameI, width=200)
