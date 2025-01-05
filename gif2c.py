@@ -82,12 +82,15 @@ def image_to_rgb565_array_bin(image: np.ndarray, bin_output_file: str):
     print(f"RGB565 array saved to {bin_output_file}")
 
 
-def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None):
+def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None, longest_length=None):
     if project_name is None:
         project_name = os.path.basename(gif_path).replace(".GIF", "")
     os.makedirs(project_name, exist_ok=True)
     frame = get_gif_frame(gif_path)
-    dims = get_dims_from_user(frame, width=width, height=height)
+    if longest_length is not None:
+        dims = get_dims_from_user_longest_len(frame, longest_length=longest_length)
+    else:
+        dims = get_dims_from_user(frame, width=width, height=height)
     gif = cv2.VideoCapture(gif_path)
     idx = 0
     cpp_str = ""
@@ -99,8 +102,9 @@ def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None)
             break
         frame = cv2.resize(frame, (dims[0], dims[1]))
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        cpp_str += f'''"/{project_name}/{project_name}_{idx}.bin", '''
-        image_to_rgb565_array_bin(frame, f"{project_name}/{project_name}_{idx}.bin")
+        path = f"{project_name}/{project_name}{idx}.bin"
+        cpp_str += f'''"/{path}", '''
+        image_to_rgb565_array_bin(frame, path)
         idx += 1
         if idx % str_break == 0:
             cpp_str += "\n"
@@ -111,6 +115,7 @@ def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None)
     with open(filename, "w") as file:
         file.write(text)
     print(f"GIF as C array saved to folder {project_name}")
+    print("Frames", idx)
     print("Width:", dims[0])
     print("Height:", dims[1])
     return cpp_str
@@ -126,17 +131,23 @@ def img_to_h(image_path: str, img_name=None, width=None, height=None):
     print("Height:", dims[1])
 
 
-# arduino_array = gif_to_bin_folder(
-#     "/Users/chrisbolig/Documents/code/gif_python/GIFS/IMG_5766.GIF",
-#     project_name="gr",
-#     width=200
-# )
-#
-# print(arduino_array)
+def get_dims_from_user_longest_len(image: np.ndarray, longest_length: int):
+    height, width = image.shape[:2]
+    if height > width:
+        scale_factor = longest_length / height
+        new_height = longest_length
+        new_width = int(width * scale_factor)
+    else:
+        scale_factor = longest_length / width
+        new_width = longest_length
+        new_height = int(height * scale_factor)
+    return new_width, new_height
 
-img_to_h("IMAGES/ChristmasWrapping3.png", img_name="bckgrnd", width=240)
 
-# frameI = get_gif_frame("/Users/chrisbolig/Documents/code/gif_python/GIFS/IMG_5766.GIF")
+
+img_to_h("IMAGES/ChristmasWrapping1.jpg", img_name="bckgrnd3", width=240, height=240)
+
+# frameI = get_gif_frame("GIFS/IMG_5766.GIF")
 # dimsI = get_dims_from_user(frameI, width=200)
 # frameI = cv2.resize(frameI, (dims[0], dims[1]))
 # image_to_rgb565_array_h(frameI, "tst.h")
