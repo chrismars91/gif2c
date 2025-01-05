@@ -145,7 +145,7 @@ def get_dims_from_user_longest_len(image: np.ndarray, longest_length: int):
 
 
 
-img_to_h("IMAGES/ChristmasWrapping1.jpg", img_name="bckgrnd3", width=240, height=240)
+#img_to_h("IMAGES/ChristmasWrapping1.jpg", img_name="bckgrnd3", width=240, height=240)
 
 # frameI = get_gif_frame("GIFS/IMG_5766.GIF")
 # dimsI = get_dims_from_user(frameI, width=200)
