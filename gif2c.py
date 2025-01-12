@@ -33,11 +33,13 @@ def get_gif_frame(gif_path: str, frame_number=0):
     return frame
 
 
-def image_to_rgb565_array_h(image: np.ndarray, output_file: str, save=True):
+def image_to_rgb565_array_h(image: np.ndarray, output_file: str, save=True, rbg2bgr=False):
     height, width, _ = image.shape
     rgb565_array = []
     for row in image:
         for pixel in row:
+            if rbg2bgr:
+                pixel = [pixel[2], pixel[1], pixel[0]]  # Swap R and B channels
             r = pixel[0] >> 3  # 5 bits for red
             g = pixel[1] >> 2  # 6 bits for green
             b = pixel[2] >> 3  # 5 bits for blue
@@ -53,7 +55,7 @@ def image_to_rgb565_array_h(image: np.ndarray, output_file: str, save=True):
                 if (i + 1) % width == 0:
                     f.write("\n")
             f.write("\n};\n")
-        print(f"RGB565 array saved to {output_file}")
+        print(f"{'BGR565' if rbg2bgr else 'RGB565'} array saved to {output_file}")
     else:
         r = "const uint16_t imageArray[] PROGMEM = {\n"
         for i, value in enumerate(rgb565_array):
@@ -66,11 +68,13 @@ def image_to_rgb565_array_h(image: np.ndarray, output_file: str, save=True):
         return r
 
 
-def image_to_rgb565_array_bin(image: np.ndarray, bin_output_file: str):
+def image_to_rgb565_array_bin(image: np.ndarray, bin_output_file: str, rbg2bgr=False):
     height, width, _ = image.shape
     with open(bin_output_file, 'wb') as bin_file:
         for row in image:
             for pixel in row:
+                if rbg2bgr:
+                    pixel = [pixel[2], pixel[1], pixel[0]]  # Swap R and B channels
                 r = pixel[0] >> 3  # 5 bits for red
                 g = pixel[1] >> 2  # 6 bits for green
                 b = pixel[2] >> 3  # 5 bits for blue
@@ -79,13 +83,15 @@ def image_to_rgb565_array_bin(image: np.ndarray, bin_output_file: str):
                 high_byte = (rgb565 >> 8) & 0xFF
                 # Write to the binary file
                 bin_file.write(bytes([low_byte, high_byte]))
-    print(f"RGB565 array saved to {bin_output_file}")
+    print(f"{'BGR565' if rbg2bgr else 'RGB565'} array saved to {bin_output_file}")
 
 
-def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None, longest_length=None):
+def gif_to_bin_folder(
+        gif_path: str, project_name=None, path_name="", width=None,
+        height=None, longest_length=None, rbg2bgr=False):
     if project_name is None:
         project_name = os.path.basename(gif_path).replace(".GIF", "")
-    os.makedirs(project_name, exist_ok=True)
+    os.makedirs(path_name + project_name, exist_ok=True)
     frame = get_gif_frame(gif_path)
     if longest_length is not None:
         dims = get_dims_from_user_longest_len(frame, longest_length=longest_length)
@@ -104,14 +110,14 @@ def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None,
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         path = f"{project_name}/{project_name}{idx}.bin"
         cpp_str += f'''"/{path}", '''
-        image_to_rgb565_array_bin(frame, path)
+        image_to_rgb565_array_bin(frame, path_name + path, rbg2bgr)
         idx += 1
         if idx % str_break == 0:
             cpp_str += "\n"
     gif.release()
     cpp_str = f"const char* {project_name}Frames[] = " + "{\n" + cpp_str[0:-2] + "\n};"
     text = f"width={dims[0]}\nheight={dims[1]}"
-    filename = f"{project_name}/{project_name}_dims.txt"
+    filename = path_name + f"{project_name}/{project_name}_dims.txt"
     with open(filename, "w") as file:
         file.write(text)
     print(f"GIF as C array saved to folder {project_name}")
@@ -121,12 +127,12 @@ def gif_to_bin_folder(gif_path: str, project_name=None, width=None, height=None,
     return cpp_str
 
 
-def img_to_h(image_path: str, img_name=None, width=None, height=None):
+def img_to_h(image_path: str, img_name=None, width=None, height=None, rbg2bgr=False):
     image = cv2.imread(image_path)
     dims = get_dims_from_user(image, width=width, height=height)
     image = cv2.resize(image, (dims[0], dims[1]))
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    image_to_rgb565_array_h(image, f"header_images/{img_name}.h")
+    image_to_rgb565_array_h(image, f"header_images/{img_name}.h", rbg2bgr=rbg2bgr)
     print("Width:", dims[0])
     print("Height:", dims[1])
 
@@ -143,9 +149,7 @@ def get_dims_from_user_longest_len(image: np.ndarray, longest_length: int):
         new_height = int(height * scale_factor)
     return new_width, new_height
 
-
-
-#img_to_h("IMAGES/ChristmasWrapping1.jpg", img_name="bckgrnd3", width=240, height=240)
+# img_to_h("IMAGES/ChristmasWrapping1.jpg", img_name="bckgrnd3", width=240, height=240)
 
 # frameI = get_gif_frame("GIFS/IMG_5766.GIF")
 # dimsI = get_dims_from_user(frameI, width=200)

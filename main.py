@@ -100,7 +100,9 @@ import gif2c
 arduino_array = gif2c.gif_to_bin_folder(
     "GIFS/IMG_5776.GIF",
     project_name="tsf",
-    longest_length=200
+    path_name="",
+    longest_length=240,
+    rbg2bgr=True  # flag to save in BGR format
 )
 print(arduino_array)
 ########################################################################################
